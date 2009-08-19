@@ -3,6 +3,10 @@ use warnings;
 use strict;
 use Cwd;
 use Config;
+use Data::Dumper;
+
+use base 'Exporter';
+our @EXPORT = qw/locallib install_deps/;
 
 our $VERSION = 0.02;
 
@@ -17,10 +21,16 @@ BEGIN {
 sub import {
     my ( $package, @params ) = @_;
     my @modules = grep { $_ !~ m/^-/ } @params;
-    my %flags = map { s/^-//g, $_ => 1 } grep { $_ =~ m/^-/ } @params;
+                      # Copy $_ so we don't change @params
+    my %flags = map { my $i = $_; $i =~ s/^-//g; $i => 1 } grep { $_ =~ m/^-/ } @params;
     unless ( @modules ) {
-        ($pkg) = caller;
-        @modules = ( $pkg );
+        my ($module) = caller;
+        @modules = ( $module );
+    }
+    if ( $flags{'import'} ) {
+        @params = grep { $_ ne '-import' } @params;
+        @_ = ( $package, @params );
+        goto &Exporter::import;
     }
     if ( $flags{locallib} ) {
         die( "Can only specify one module to use with the -locallib flag.\n" ) if @modules > 1;
@@ -33,12 +43,27 @@ sub import {
 sub locallib {
     my ( $module ) = @_;
     my $mpath = _full_module_path( $module );
-    eval "use local::lib '$mpath'";
+    _add_path( $module );
+    my $eval = "use local::lib '$mpath'";
+    eval $eval;
+    die( $@ ) if $@;
+}
+
+sub install_deps {
+    my ($pkg, @deps) = @_;
+    print "Forking child process to run cpan...\n";
+    if ( my $pid = fork ) {
+        waitpid( $pid, 0 );
+    }
+    else {
+        _install_deps( $pkg, @deps );
+        exit;
+    }
 }
 
 sub _module_path {
     my ( $module ) = @_;
-    $mpath = $module;
+    my $mpath = $module;
     $mpath =~ s,::,/,g;
     return $mpath;
 }
@@ -52,22 +77,11 @@ sub _add_path {
 }
 
 sub _path {
-    return join( "/", _full_module_path( @_ ), "/lib/perl5" );
+    return join( "/", _full_module_path( @_ ), "lib/perl5" );
 }
 
 sub _arch_path {
     return join( "/", _path( @_ ), $Config{archname});
-}
-
-sub install_deps {
-    my ($pkg, @deps) = @_;
-    print "Forking child process to run cpan...\n";
-    if ( my $pid = fork ) {
-        waitpid( $pid, 0 );
-    }
-    else {
-        _install_deps( $pkg, @deps );
-    }
 }
 
 sub _install_deps {
@@ -78,9 +92,9 @@ sub _install_deps {
     CPAN::HandleConfig->load();
     CPAN::Shell::setup_output();
     CPAN::Index->reload();
+    local $CPAN::Config->{build_requires_install_policy} = 'yes';
     {
-        local $CPAN::Config = { %$CPAN::Config };
-        $CPAN::Config->{makepl_arg} = '--bootstrap=' . _full_module_path( $pkg );
+        local $CPAN::Config->{makepl_arg} = '--bootstrap=' . _full_module_path( $pkg );
         CPAN::Shell->install( 'local::lib' );
     }
 
