@@ -185,7 +185,7 @@ __END__
 
 =head1 COPYRIGHT
 
-Copyright (C) 2004-2007 OpenSourcery, LLC
+Copyright (C) 2004-2009 OpenSourcery, LLC
 
 local-lib-deps is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
