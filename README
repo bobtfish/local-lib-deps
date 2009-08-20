@@ -1,0 +1,66 @@
+NAME
+    local::lib::deps - Maintain a module specific lib path for that modules
+    dependencies.
+
+DESCRIPTION
+    Maintaining perl module dependencies through a distributions package
+    manager can be a real pain. This module helps by making it easier to
+    simply bundle all your applications dependencies into one lib path
+    specific to the module. It also makes it easy to tell your applicatin
+    where to look for modules.
+
+SYNOPSYS
+    Bootstrap your modules dependency area:
+
+        use local::lib::deps '-import'; #import the public functions instead of bringing in a modules path.
+        install_deps( 'My::Module', qw/Dep::One Dep::Two .../ );
+
+    This will create a directory specifically for the My::Module namespace
+    and install the specified dependencies (and local::lib) there.
+
+    To use those deps in your app:
+
+        use local::lib::deps qw/ My::Module /;
+        use Dep::One;
+
+    To initiate local::lib with the destination directory of your module:
+
+        use local::lib::deps -locallib 'My::Module';
+
+PUBLIC FUNCTIONS
+    To bring these in to your program do this:
+
+        use local::lib::deps -import;
+
+    locallib( $module )
+        Will get local::lib setup against the local::lib::deps dir for the
+        specified module.
+
+    install_deps( $module, @deps )
+        This will bootstrap local::lib into a local::lib::deps folder for
+        the specified module, it will then continue to install (or update)
+        allt he dependency modules.
+
+AUTHORS
+    Chad Granum chad@opensourcery.com
+
+COPYRIGHT
+    Copyright (C) 2009 OpenSourcery, LLC
+
+    local-lib-deps is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by the
+    Free Software Foundation; either version 2 of the License, or (at your
+    option) any later version.
+
+    local-lib-deps is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+    Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+    local-lib-deps is packaged with a copy of the GNU General Public
+    License. Please see docs/COPYING in this distribution.
+
